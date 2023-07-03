@@ -1,0 +1,25 @@
+{
+  "name": "squad_tracker",
+  "version": "1.0.0",
+  "description": "A discord bot to track squad members",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "squad"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.11.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.43.0",
+    "nodemon": "^2.0.22"
+  }
+}
