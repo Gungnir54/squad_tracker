@@ -56,6 +56,21 @@ module.exports = {
       },
     };
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply('Veuillez patienter pendant que je récupère les informations...');
+
+    const sendPrivateMessage = async () => {
+      try {
+        const dmChannel = await interaction.user.createDM();
+        await dmChannel.send({ embeds: [embed] });
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi du message privé :', error);
+      }
+    };
+
+    sendPrivateMessage();
+    setTimeout(() => {
+      interaction.deleteReply();
+    }
+    , 3000);
   },
 };
