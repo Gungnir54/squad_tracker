@@ -1,52 +1,86 @@
 const { SlashCommandBuilder } = require('discord.js');
 
+const cmd = new SlashCommandBuilder()
+  .setName('tracker')
+  .setDescription('Affiche comment se servir de la commande /tracker')
+  .addStringOption((option) =>
+    option
+      .setName('jeu')
+      .setDescription('Le jeu sur lequel vous voulez récupérer les stats.')
+      .addChoices(
+        { name: 'League of Legends', value: 'League of Legends' },
+        { name: 'Teamfight Tactics', value: 'Teamfight Tactics' },
+        { name: 'Valorant', value: 'Valorant' }
+      )
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('pseudo')
+      .setDescription('Le pseudo du joueur dont vous voulez récupérer les stats.')
+      .setRequired(true)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('tag')
+      .setDescription('Le tag du joueur dont vous voulez récupérer les stats **(Valorant uniquement)**.')
+      .setRequired(false)
+  )
+  .addStringOption((option) =>
+    option
+      .setName('region')
+      .setDescription('La région du joueur dont vous voulez récupérer les stats **(LOL et TFT)**.')
+      .addChoices(
+        { name: 'EUW', value: 'EUW' },
+        { name: 'EUNE', value: 'EUNE' },
+        { name: 'NA', value: 'NA' },
+        { name: 'KR', value: 'KR' },
+        { name: 'JP', value: 'JP' },
+        { name: 'OCE', value: 'OCE' },
+        { name: 'BR', value: 'BR' },
+        { name: 'LAN', value: 'LAN' },
+        { name: 'LAS', value: 'LAS' },
+        { name: 'RU', value: 'RU' },
+        { name: 'TR', value: 'TR' }
+      )
+      .setRequired(false)
+  );
+
 module.exports = {
-  cmd: new SlashCommandBuilder()
-    .setName('tracker')
-    .setDescription('Affiche comment se servir de la commande /tracker')
-    .addRoleOption((option) =>
-      option
-        .setName('jeu')
-        .setDescription('Le jeu sur lequel vous voulez récupérer les stats.')
-        .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName('pseudo')
-        .setDescription('Le pseudo du joueur dont vous voulez récupérer les stats.')
-        .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName('tag')
-        .setDescription('Le tag du joueur dont vous voulez récupérer les stats.')
-        .setRequired(false)
-    ),
+  cmd,
   async execute(interaction) {
-    const jeu = interaction.options.getRole('jeu');
+    const jeu = interaction.options.getString('jeu');
     const pseudo = interaction.options.getString('pseudo');
-    const tag = '%23' + interaction.options.getString('tag');
+    const tag = interaction.options.getString('tag');
+    const region = interaction.options.getString('region');
+    const dmChannel = await interaction.user.createDM();
     let concatPseudo = pseudo;
-    let editJeu = jeu.name.toLowerCase();
+    let editJeu = jeu.toLowerCase();
 
-    if (jeu.name == 'League of Legends') {
-      concatPseudo = 'EUW/' + pseudo;
-      editJeu = 'lol';
-    } else if (jeu.name == 'Teamfight Tactics') {
-      concatPseudo = 'EUW/' + pseudo;
-      editJeu = 'tft';
-    }
-
-    if (jeu.name === 'Valorant') {
-      concatPseudo = pseudo + tag;
+    if (jeu == 'Valorant') {
+      if (!tag) {
+        return await dmChannel.send('Veuillez fournir le champ "tag" dans les options.');
+      }
+      concatPseudo = pseudo + '%23' + tag;
+    } else {
+      if (jeu == 'League of Legends') {
+        editJeu = 'lol';
+      } else if (jeu == 'Teamfight Tactics') {
+        editJeu = 'tft';
+      }
+      if (region) {
+        concatPseudo = region + '/' + pseudo;
+      } else {
+        return await dmChannel.send('Veuillez fournir le champ "region" dans les options.');
+      }
     }
 
     const embed = {
       color: 0x6495ED,
-      title: `Stats de ${pseudo} sur ${jeu.name} :`,
+      title: `Stats de ${pseudo} sur ${jeu} pour cette saison :`,
       fields: [
         {
-          name: 'URL vers le site de tracking :',
+          name: '',
           value: `https://tracker.gg/${editJeu}/profile/riot/${concatPseudo}/overview`,
         },
       ],
@@ -56,21 +90,20 @@ module.exports = {
       },
     };
 
-    await interaction.reply('Veuillez patienter pendant que je récupère les informations...');
+    await interaction.reply({ content: 'Veuillez patienter pendant que je récupère les informations...', ephemeral: true });
 
     const sendPrivateMessage = async () => {
       try {
-        const dmChannel = await interaction.user.createDM();
         await dmChannel.send({ embeds: [embed] });
+        setTimeout(() => {
+          interaction.deleteReply();
+        }, 2000);
       } catch (error) {
         console.error('Erreur lors de l\'envoi du message privé :', error);
+        interaction.reply({ content: 'Une erreur est survenue lors de la récupération des informations, veuillez réessayer plus tard.', ephemeral: true });
       }
     };
 
     sendPrivateMessage();
-    setTimeout(() => {
-      interaction.deleteReply();
-    }
-    , 3000);
   },
 };
